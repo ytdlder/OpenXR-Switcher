@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenXR Switcher", "OpenXR Switcher.csproj", "{12BEF783-D659-4AB9-9B7D-238D7F70B125}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12BEF783-D659-4AB9-9B7D-238D7F70B125}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12BEF783-D659-4AB9-9B7D-238D7F70B125}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12BEF783-D659-4AB9-9B7D-238D7F70B125}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12BEF783-D659-4AB9-9B7D-238D7F70B125}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85F118C0-DB1D-4AF3-AAC8-69CE59589F58}
+	EndGlobalSection
+EndGlobal
