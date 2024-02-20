@@ -1,13 +1,14 @@
 # OpenXR Switcher
 
 Easily switch between OpenXR runtimes and toggle layers
-<p align="center">
-  <a href="https://github.com/ytdlder/OpenXR-Switcher/releases/"><img alt="Download" src="icon3.png"/></a>
-</p>
+
+[Download](https://github.com/ytdlder/OpenXR-Switcher/releases/)
 
 ## Description
 
-Reads the Windows registry which OpenXR runtimes/layers are installed, checks if these .json descriptor files are really present (or stale) and lets you enable/disable them quickly. PC restart is not required, as those keys are read on VR launch.
+Reads the Windows registry which OpenXR runtimes/layers are installed, checks if these .json descriptor files are really present (or stale) and lets you enable/disable them quickly.
+
+*(-> A PC restart is not required, as those keys are read on VR launch)*
 
 ## Getting Started
 
@@ -19,7 +20,7 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 ### Installing
 
-* no installing needed
+* no installation needed
 * just unzip and start the EXE
 
 ### HowTo - GUI
@@ -30,14 +31,14 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 * the runtime can be switched to any inactive one
 * layers can be en-/disabled as needed *(I've added clearer names for known layers like OpenKneeboard)*
 
-* ### HowTo - CLI
+### HowTo - CLI
 
 * the program can also be started via CMD and will let you switch to another runtime without starting the GUI:
-* **"OpenXR Switcher.exe" /h**
+* `"OpenXR Switcher.exe" /h`
 
 * you don't need to specify the exact JSON file name *(eg. "steamxr_win64.json")*, but some text that can be found
-* like: "OpenXR Switcher.exe steam"
-* or:   "OpenXR Switcher.exe steamvr"
+* like: `"OpenXR Switcher.exe" steam`
+* or:   `"OpenXR Switcher.exe" steamvr`
 
 ## Errors
 
