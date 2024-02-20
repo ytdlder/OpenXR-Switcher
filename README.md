@@ -1,8 +1,10 @@
 # OpenXR Switcher
 
 Easily switch between OpenXR runtimes and toggle layers
+<p align="center">
+  <a href="https://github.com/ytdlder/OpenXR-Switcher/releases/">Download<br><br><img src="icon3.png"/></a><br>
+</p>
 
-[Download](https://github.com/ytdlder/OpenXR-Switcher/releases/)
 
 ## Description
 
