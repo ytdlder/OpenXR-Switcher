@@ -133,10 +133,9 @@ namespace OpenXR_Switcher
 
                 regkey.Close();
             }
-
-            if (allruntimes.Length == 0)
+            else
             {
-                MessageBox.Show("No 'Khronos' registry key found; no OpenXR runtime installed?\n\nPress OK to exit.", "ERROR", MessageBoxButtons.OK);
+                MessageBox.Show("No 'Khronos' registry key or OpenXR subkeys found; no OpenXR runtime installed?\n\nPress OK to exit.", "ERROR", MessageBoxButtons.OK);
                 Application.Exit();
             }
         }
@@ -174,6 +173,79 @@ namespace OpenXR_Switcher
                     }
                 }
             }
+        }
+
+        private static void SetActiveRuntime(this Panel panel)
+        {
+            string JsonFile = panel.Tag.ToString();
+
+            if (WriteToReg(reg_activeruntime, reg_activeruntime_name, JsonFile, RegistryValueKind.String))
+            {
+                panel.BorderStyle = BorderStyle.FixedSingle;
+
+                foreach (Control c in panel.Parent.Controls)
+                {
+                    if (c is Panel)
+                    {
+                        JsonFile = c.Tag.ToString();
+
+                        if (c == panel)
+                            SetPanelActive(c as Panel);
+                        else if (File.Exists(@JsonFile))
+                            SetPanelInactive(c as Panel);
+                        else
+                            SetPanelNotFound(c as Panel);
+                    }
+                }
+            }
+        }
+
+        private static void SetActiveLayer(this Panel panel, string value)
+        {
+            string JsonFile = panel.Tag.ToString();
+
+            if (WriteToReg(reg_alllayers, JsonFile, value, RegistryValueKind.DWord))
+            {
+                if (value == layer_inactive)
+                {
+                    SetPanelInactive(panel, true);
+                }
+                else
+                {
+                    SetPanelActive(panel, true);
+                }
+            }
+        }
+
+        private static bool WriteToReg(string Key, string Name, string Value, RegistryValueKind Type)
+        {
+            RegistryKey regkey;
+
+            if (Registry.LocalMachine.OpenSubKey(Key) != null)
+            {
+                try
+                {
+                    regkey = Registry.LocalMachine.OpenSubKey(Key, true);
+                }
+                catch
+                {
+                    MessageBox.Show("Couldn't open registry with write access!", "ERROR", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                try
+                {
+                    Registry.SetValue("HKEY_LOCAL_MACHINE\\" + Key, Name, Value, Type);
+                    return true;
+                }
+                catch
+                {
+                    MessageBox.Show("Couldn't write to registry!", "ERROR", MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+            else
+                return false;
         }
 
         private static void AddPanel(FlowLayoutPanel layoutpanel, string filepath, string value=null)
@@ -331,7 +403,11 @@ namespace OpenXR_Switcher
             }
 
             panel.BackColor = backgroundactive;
+
+            mainWindow.toolTipActive.Hide(panel);
             mainWindow.toolTipActive.SetToolTip(panel, tooltiptext);
+            mainWindow.toolTipInactive.Hide(panel);
+            mainWindow.toolTipInactive.SetToolTip(panel, "");
 
             foreach (Control c in panel.Controls)
             {
@@ -355,7 +431,11 @@ namespace OpenXR_Switcher
                     }
 
                     c.BackColor = backgroundactive;
+
+                    mainWindow.toolTipActive.Hide(c);
                     mainWindow.toolTipActive.SetToolTip(c, tooltiptext);
+                    mainWindow.toolTipInactive.Hide(c);
+                    mainWindow.toolTipInactive.SetToolTip(c, "");
                 }
             }
         }
@@ -366,6 +446,10 @@ namespace OpenXR_Switcher
 
             panel.BackColor = backgroundinactive;
             panel.Cursor = Cursors.Hand;
+
+            mainWindow.toolTipActive.Hide(panel);
+            mainWindow.toolTipActive.SetToolTip(panel, "");
+            mainWindow.toolTipInactive.Hide(panel);
             mainWindow.toolTipInactive.SetToolTip(panel, tooltiptext);
 
             panel.MouseEnter += new EventHandler(evtPanel_MouseEnter);
@@ -381,6 +465,10 @@ namespace OpenXR_Switcher
                 {
                     c.BackColor = backgroundinactive;
                     c.Cursor = Cursors.Hand;
+
+                    mainWindow.toolTipActive.Hide(c);
+                    mainWindow.toolTipActive.SetToolTip(c, "");
+                    mainWindow.toolTipInactive.Hide(c);
                     mainWindow.toolTipInactive.SetToolTip(c, tooltiptext);
 
                     c.MouseEnter += new EventHandler(evtTextbox_MouseEnter);
@@ -411,102 +499,6 @@ namespace OpenXR_Switcher
                     mainWindow.toolTipNotFound.SetToolTip(c, tooltiptext);
                 }
             }
-        }
-
-        private static void SetActiveRuntime(this Panel panel)
-        {
-            string JsonFile = panel.Tag.ToString();
-
-            if (WriteToReg(reg_activeruntime, reg_activeruntime_name, JsonFile, RegistryValueKind.String))
-            {
-                panel.BorderStyle = BorderStyle.FixedSingle;
-
-/*mainWindow.toolTipActive.RemoveAll();
-mainWindow.toolTipInactive.RemoveAll();
-mainWindow.toolTipNotFound.RemoveAll();*/
-
-                foreach (Control c in panel.Parent.Controls)
-                {
-                    if (c is Panel)
-                    {
-                        JsonFile = c.Tag.ToString();
-
-                        if (c == panel)
-                            SetPanelActive(c as Panel);
-                        else if (File.Exists(@JsonFile))
-                            SetPanelInactive(c as Panel);
-                        else
-                            SetPanelNotFound(c as Panel);
-                    }
-                }
-            }
-        }
-
-        private static void SetActiveLayer(this Panel panel, string value)
-        {
-            string JsonFile = panel.Tag.ToString();
-
-            if (WriteToReg(reg_alllayers, JsonFile, value, RegistryValueKind.DWord))
-            {
-                foreach (Control c in panel.Controls)
-                {
-                    if (c is RichTextBox)
-                    {
-                        mainWindow.toolTipActive.Hide(panel);
-                        mainWindow.toolTipActive.SetToolTip(c, "");
-
-                        mainWindow.toolTipInactive.Hide(panel);
-                        mainWindow.toolTipInactive.SetToolTip(c, "");
-                    }
-                }
-
-
-                if (value == layer_inactive)
-                {
-                    mainWindow.toolTipInactive.Hide(panel);
-                    mainWindow.toolTipInactive.SetToolTip(panel, "");
-
-                    SetPanelInactive(panel, true);
-                }   
-                else
-                {
-                    mainWindow.toolTipActive.Hide(panel);
-                    mainWindow.toolTipActive.SetToolTip(panel, "");
-
-                    SetPanelActive(panel, true);
-                }
-            }
-        }
-
-        private static bool WriteToReg(string Key, string Name, string Value, RegistryValueKind Type)
-        {
-            RegistryKey regkey;
-
-            if (Registry.LocalMachine.OpenSubKey(Key) != null)
-            {
-                try
-                {
-                    regkey = Registry.LocalMachine.OpenSubKey(Key, true);
-                }
-                catch
-                {
-                    MessageBox.Show("Couldn't open registry with write access!", "ERROR", MessageBoxButtons.OK);
-                    return false;
-                }
-
-                try
-                {
-                    Registry.SetValue("HKEY_LOCAL_MACHINE\\" + Key, Name, Value, Type);
-                    return true;
-                }
-                catch
-                {
-                    MessageBox.Show("Couldn't write to registry!", "ERROR", MessageBoxButtons.OK);
-                    return false;
-                }
-            }
-            else
-                return false;
         }
 
         // EVENTS
