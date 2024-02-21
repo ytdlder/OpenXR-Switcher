@@ -18,6 +18,9 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 * Windows 7, 10, 11
 * .NET 6.0 Runtime *(if not using the rather big single EXE)*
+  * [Microsoft Runtime Download](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+  * under **.NET Desktop Runtime 6.x.x**, next to **Windows**, click on your arch type (x86, x64) to download the newest runtime
+  * __Direct Link__: [Latest x64 Runtime](https://aka.ms/dotnet/6.0/windowsdesktop-runtime-win-x64.exe)
 * !! REQUIRES ADMIN RIGHTS !! *(-> the reg keys are located in _HKLM_!)*
 
 ### Installing
