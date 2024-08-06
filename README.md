@@ -48,6 +48,9 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 ## Version History
 
+* 1.1
+	* added Refresh button
+	* added recognized layers 
 * 1.0
 	* initial release
 

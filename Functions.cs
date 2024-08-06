@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -248,30 +249,42 @@ namespace OpenXR_Switcher
                 return false;
         }
 
-        private static void AddPanel(FlowLayoutPanel layoutpanel, string filepath, string value=null)
+        private static void AddPanel(FlowLayoutPanel layoutpanel, string filepath, string value = null)
         {
-            string filepathname = Path.GetFileName(filepath);
-            string[] temp = filepathname.Split('_', '-');
+            string filename = Path.GetFileName(filepath);
+
+            string[] parts = filepath.Split('\\');
+            string filepathname = parts[parts.Length - 2] + '\\' + parts[parts.Length - 1];
+
             int image_width_border = 3;
 
-            if (string.Equals(filepathname, "MixedRealityRuntime.json", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(filepathname, "System32\\MixedRealityRuntime.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "WMR";
-            else if (string.Equals(filepathname, "openxr-oculus-compatibility.json", StringComparison.OrdinalIgnoreCase))
+
+
+            else if (string.Equals(filepathname, "Virtual Desktop Streamer\\openxr-oculus-compatibility.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "VirtualDesktop Oculus Compatibility";
-            else if (string.Equals(filepathname, "XrApiLayer_dlvr.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "DlvrOpenXrLayer\\XrApiLayer_dlvr.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "Almalence DigitalLense";
-            else if (string.Equals(filepathname, "UltraleapHandTracking.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR\\UltraleapHandTracking.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "Ultraleap HandTracking";
-            else if (string.Equals(filepathname, "XR_APILAYER_MBUCCHIA_toolkit.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Toolkit\\XR_APILAYER_MBUCCHIA_toolkit.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "OpenXR Toolkit";
-            else if (string.Equals(filepathname, "openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Quad-Views-Foveated\\openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "QuadViews DFR";
-            else if (string.Equals(filepathname, "XR_APILAYER_NOVENDOR_XRNeckSafer.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Eye-Trackers\\openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
+                filepathname = "SteamVR Eye Tracking / DFR";
+            else if (string.Equals(filepathname, "OpenXrApiLayer\\XR_APILAYER_NOVENDOR_XRNeckSafer.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "NeckSafer";
-            else if (string.Equals(filepathname, "OpenKneeboard-OpenXR.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "bin\\OpenKneeboard-OpenXR.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "OpenKneeBoard";
+
+            
             else
+            {
+                string[] temp = filename.Split('_', '-');
                 filepathname = temp[0].ToUpper();
+            }
 
 
             // --------------------------------------------------------
