@@ -36,7 +36,7 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 * otherwise, the background will be red
 * the runtime can be switched to any inactive one
 * layers can be en-/disabled as needed *(I've added clearer names for known layers like OpenKneeboard)*
-* all names can be renamed to ones liking
+* all titles can be renamed to ones liking
 
 ### HowTo - CLI
 
