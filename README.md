@@ -17,7 +17,11 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 ### Dependencies
 
 * Windows 7, 10, 11
-* .NET 6.0 Runtime *(if not using the rather big single EXE)*
+* for whatever reasons, Visual Studio no longer creates a stand-alone, all-in-one EXE, so the .Net Runtime **has to be installed** 
+* .NET 6.0 Runtime
+  * [Microsoft Runtime Download](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+  * under **.NET Desktop Runtime 6.x.x**, next to **Windows**, click on your arch type (x86, x64) to download the newest runtime
+  * __Direct Link__: [Latest x64 Runtime](https://aka.ms/dotnet/6.0/windowsdesktop-runtime-win-x64.exe)
 * !! REQUIRES ADMIN RIGHTS !! *(-> the reg keys are located in _HKLM_!)*
 
 ### Installing
@@ -32,6 +36,7 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 * otherwise, the background will be red
 * the runtime can be switched to any inactive one
 * layers can be en-/disabled as needed *(I've added clearer names for known layers like OpenKneeboard)*
+* all names can be renamed to ones liking
 
 ### HowTo - CLI
 
@@ -48,6 +53,12 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 ## Version History
 
+* 1.2
+	* added Rename function, that allows for custom names
+	* these are added to the local users registry (HKCU\Software\Hotshot\OpenXRSwitcher)
+* 1.1
+	* added Refresh button
+	* added recognized layers 
 * 1.0
 	* initial release
 

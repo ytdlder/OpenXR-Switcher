@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -47,18 +48,21 @@ namespace OpenXR_Switcher
     {
         // PUBLIC VARIABLES
         // *********************************************************************
-        private static string   wmr = @"C:\Windows\System32\MixedRealityRuntime.json";
-        private static Color    backgroundactive = Color.LightGreen;
-        private static Color    backgroundinactive = Color.IndianRed;
-        private static Color    backgroundnotfound = Color.Ivory;
-        private static string   activeruntime = "";
+        public static string    reg_usersetnames    = @"SOFTWARE\Hotshot\OpenXRSwitcher";
+        public static string    saved_name          = "";
+        private static string[,] allusersetnames;
+        private static string   wmr                 = @"C:\Windows\System32\MixedRealityRuntime.json";
+        private static Color    backgroundactive    = Color.LightGreen;
+        private static Color    backgroundinactive  = Color.IndianRed;
+        private static Color    backgroundnotfound  = Color.Ivory;
+        private static string   activeruntime       = "";
         private static string[] allruntimes;
-        private static string   reg_activeruntime = @"SOFTWARE\Khronos\OpenXR\1";
+        private static string   reg_activeruntime   = @"SOFTWARE\Khronos\OpenXR\1";
         private static string   reg_activeruntime_name = "ActiveRuntime";
         private static string   reg_availableruntimes = @"SOFTWARE\Khronos\OpenXR\1\AvailableRuntimes";
-        private static string   reg_alllayers = @"SOFTWARE\Khronos\OpenXR\1\ApiLayers\Implicit";
-        private static string   layer_active = "0";
-        private static string   layer_inactive = "1";
+        private static string   reg_alllayers       = @"SOFTWARE\Khronos\OpenXR\1\ApiLayers\Implicit";
+        private static string   layer_active        = "0";
+        private static string   layer_inactive      = "1";
 
         // get access to Main-Class elements
         private static WindowMain mainWindow = (WindowMain)Application.OpenForms[0];
@@ -93,7 +97,7 @@ namespace OpenXR_Switcher
                         }
                         else
                         {
-                            if (WriteToReg(reg_activeruntime, reg_activeruntime_name, SetRuntimeTo, RegistryValueKind.String))
+                            if (WriteToReg("HKLM", reg_activeruntime, reg_activeruntime_name, SetRuntimeTo, RegistryValueKind.String))
                                 MessageBox.Show("Runtime successfully switched!", "Info", MessageBoxButtons.OK);
                         }
                     }
@@ -138,6 +142,27 @@ namespace OpenXR_Switcher
                 MessageBox.Show("No 'Khronos' registry key or OpenXR subkeys found; no OpenXR runtime installed?\n\nPress OK to exit.", "ERROR", MessageBoxButtons.OK);
                 Application.Exit();
             }
+
+            // get user-set names for runtimes and layers
+            regkey = Registry.CurrentUser.OpenSubKey(reg_usersetnames);
+
+            if (regkey != null)
+            {
+                string[] original_names = regkey.GetValueNames();
+
+                if (original_names != null)
+                {
+                    //string[,] user_names = new string[original_names.Length, 2];
+                    allusersetnames = new string[original_names.Length, 2];
+
+                    for (int i = 0; i < original_names.Length; i++)
+                    {
+                        allusersetnames[i, 0] = original_names[i];
+                        allusersetnames[i, 1] = regkey.GetValue(original_names[i]).ToString();
+                    }
+                    regkey.Close();
+                }
+            }
         }
 
         public static void AddRuntimes()
@@ -179,7 +204,7 @@ namespace OpenXR_Switcher
         {
             string JsonFile = panel.Tag.ToString();
 
-            if (WriteToReg(reg_activeruntime, reg_activeruntime_name, JsonFile, RegistryValueKind.String))
+            if (WriteToReg("HKLM", reg_activeruntime, reg_activeruntime_name, JsonFile, RegistryValueKind.String))
             {
                 panel.BorderStyle = BorderStyle.FixedSingle;
 
@@ -204,7 +229,7 @@ namespace OpenXR_Switcher
         {
             string JsonFile = panel.Tag.ToString();
 
-            if (WriteToReg(reg_alllayers, JsonFile, value, RegistryValueKind.DWord))
+            if (WriteToReg("HKLM", reg_alllayers, JsonFile, value, RegistryValueKind.DWord))
             {
                 if (value == layer_inactive)
                 {
@@ -217,25 +242,41 @@ namespace OpenXR_Switcher
             }
         }
 
-        private static bool WriteToReg(string Key, string Name, string Value, RegistryValueKind Type)
+        public static bool WriteToReg(string Hive, string Key, string Name, string Value, RegistryValueKind Type)
         {
             RegistryKey regkey;
 
-            if (Registry.LocalMachine.OpenSubKey(Key) != null)
+            try
+            {
+                if (Hive == "HKLM")
+                    regkey = Registry.LocalMachine.OpenSubKey(Key, true);
+                else
+                    regkey = Registry.CurrentUser.CreateSubKey(Key, true);
+            }
+            catch
+            {
+                MessageBox.Show("Couldn't open >"+ Hive + "< registry with write access!", "ERROR", MessageBoxButtons.OK);
+                return false;
+            }
+
+            if (Name == "#DELETE#")
             {
                 try
                 {
-                    regkey = Registry.LocalMachine.OpenSubKey(Key, true);
+                    regkey.DeleteValue(Value);
+                    return true;
                 }
                 catch
                 {
-                    MessageBox.Show("Couldn't open registry with write access!", "ERROR", MessageBoxButtons.OK);
+                    MessageBox.Show("Couldn't delete from registry!", "ERROR", MessageBoxButtons.OK);
                     return false;
                 }
-
+            }
+            else
+            {
                 try
                 {
-                    Registry.SetValue("HKEY_LOCAL_MACHINE\\" + Key, Name, Value, Type);
+                    regkey.SetValue(Name, Value, Type);
                     return true;
                 }
                 catch
@@ -244,37 +285,45 @@ namespace OpenXR_Switcher
                     return false;
                 }
             }
-            else
-                return false;
         }
 
-        private static void AddPanel(FlowLayoutPanel layoutpanel, string filepath, string value=null)
+        private static void AddPanel(FlowLayoutPanel layoutpanel, string filepath, string value = null)
         {
-            string filepathname = Path.GetFileName(filepath);
-            string[] temp = filepathname.Split('_', '-');
+            string filename = Path.GetFileName(filepath);
+
+            string[] parts = filepath.Split('\\');
+            string filepathname = parts[parts.Length - 2] + '\\' + parts[parts.Length - 1];
+
             int image_width_border = 3;
 
-            if (string.Equals(filepathname, "MixedRealityRuntime.json", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(filepathname, "System32\\MixedRealityRuntime.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "WMR";
-            else if (string.Equals(filepathname, "openxr-oculus-compatibility.json", StringComparison.OrdinalIgnoreCase))
+
+            else if (string.Equals(filepathname, "Virtual Desktop Streamer\\openxr-oculus-compatibility.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "VirtualDesktop Oculus Compatibility";
-            else if (string.Equals(filepathname, "XrApiLayer_dlvr.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "DlvrOpenXrLayer\\XrApiLayer_dlvr.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "Almalence DigitalLense";
-            else if (string.Equals(filepathname, "UltraleapHandTracking.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR\\UltraleapHandTracking.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "Ultraleap HandTracking";
-            else if (string.Equals(filepathname, "XR_APILAYER_MBUCCHIA_toolkit.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Toolkit\\XR_APILAYER_MBUCCHIA_toolkit.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "OpenXR Toolkit";
-            else if (string.Equals(filepathname, "openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Quad-Views-Foveated\\openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "QuadViews DFR";
-            else if (string.Equals(filepathname, "XR_APILAYER_NOVENDOR_XRNeckSafer.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "OpenXR-Eye-Trackers\\openxr-api-layer.json", StringComparison.OrdinalIgnoreCase))
+                filepathname = "SteamVR Eye Tracking / DFR";
+            else if (string.Equals(filepathname, "OpenXrApiLayer\\XR_APILAYER_NOVENDOR_XRNeckSafer.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "NeckSafer";
-            else if (string.Equals(filepathname, "OpenKneeboard-OpenXR.json", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(filepathname, "bin\\OpenKneeboard-OpenXR.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "OpenKneeBoard";
+            
             else
+            {
+                string[] temp = filename.Split('_', '-');
                 filepathname = temp[0].ToUpper();
+            }
 
 
-            // --------------------------------------------------------
+            // ----------------------------------------------------------------------------------------------------------------
             Panel panel = new Panel();
             panel.BorderStyle = BorderStyle.FixedSingle;
             panel.Dock = DockStyle.Top;
@@ -284,39 +333,69 @@ namespace OpenXR_Switcher
 
             panel.Tag = filepath;
 
-            // --------------------------------------------------------
+            // ----------------------------------------------------------------------------------------------------------------
             if (value == null)
             {
                 // for runtimes only
-                PictureBox logo = new PictureBox();
-                logo.BackColor = Color.White;           // Wheat
-                logo.BorderStyle = BorderStyle.None;
-                logo.Dock = DockStyle.Left;
-                logo.Location = new Point(0, 0);
-                logo.Size = new Size(64, 64);
-                logo.SizeMode = PictureBoxSizeMode.Zoom;
+                PictureBox pictureboxLogo = new PictureBox();
+                pictureboxLogo.BackColor = Color.White;           // Wheat
+                pictureboxLogo.BorderStyle = BorderStyle.None;
+                pictureboxLogo.Dock = DockStyle.Left;
+                pictureboxLogo.Location = new Point(0, 0);
+                pictureboxLogo.Size = new Size(64, 64);
+                pictureboxLogo.SizeMode = PictureBoxSizeMode.Zoom;
                 image_width_border = 70;
 
                 switch (filepathname)
                 {
-                    case "OCULUS": logo.Image = Properties.Resources.logo_oculus_meta; break;
-                    case "STEAMXR": logo.Image = Properties.Resources.logo_steamvr; break;
-                    case "VARJO": logo.Image = Properties.Resources.logo_varjo; break;
-                    case "VIVEVR": logo.Image = Properties.Resources.logo_vive; break;
-                    case "PIMAX": logo.Image = Properties.Resources.logo_pimax; break;
-                    case "WMR": logo.Image = Properties.Resources.logo_wmr; break;
-                    default: logo.Image = Properties.Resources.logo_na; break;
+                    case "WMR": pictureboxLogo.Image = Properties.Resources.logo_wmr; break;
+                    case "OCULUS": pictureboxLogo.Image = Properties.Resources.logo_oculus_meta; break;
+                    case "STEAMXR": pictureboxLogo.Image = Properties.Resources.logo_steamvr; break;
+                    case "VARJO": pictureboxLogo.Image = Properties.Resources.logo_varjo; break;
+                    case "VIVEVR": pictureboxLogo.Image = Properties.Resources.logo_vive; break;
+                    case "PIMAX": pictureboxLogo.Image = Properties.Resources.logo_pimax; break;
+                    case "PIOPENXR": pictureboxLogo.Image = Properties.Resources.logo_pimax; break;
+                    default: pictureboxLogo.Image = Properties.Resources.logo_na; break;
                 }
 
-                panel.Controls.Add(logo);
+                panel.Controls.Add(pictureboxLogo);
             }
 
-            // --------------------------------------------------------
+            // Check filepathname with user set name
+            string originalname = filepathname;
+
+            for (int i = 0; i < (allusersetnames.Length / 2); i++)    // durch 2, weil zweidimensionales Array und Length alle Felder zählt!
+            {
+                if (filepathname == allusersetnames[i, 0])
+                {
+                    originalname = allusersetnames[i, 0];
+                    filepathname = allusersetnames[i, 1];
+                    break;
+                }
+            }
+
+            // ----------------------------------------------------------------------------------------------------------------
+            PictureBox pictureboxEdit = new PictureBox();
+            pictureboxEdit.BorderStyle = BorderStyle.None;
+            pictureboxEdit.Dock = DockStyle.None;
+            pictureboxEdit.Location = new Point(image_width_border, 6);
+            pictureboxEdit.Size = new Size(20, 20);
+            pictureboxEdit.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureboxEdit.Image = Properties.Resources.symb_edit;
+            pictureboxEdit.Cursor = Cursors.Cross;
+            mainWindow.toolTipEdit.SetToolTip(pictureboxEdit, "Change the display name");
+            pictureboxEdit.Click += new EventHandler((sender, e) => evtEditPictureBox_Clicked(sender, e, originalname, filepathname));
+
+            int image2_width_border = image_width_border + 22;
+
+            panel.Controls.Add(pictureboxEdit);
+
+            // ----------------------------------------------------------------------------------------------------------------
             ExRichTextBox head = new ExRichTextBox();
             head.Selectable = false;
             head.BorderStyle = BorderStyle.None;
             head.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
-            head.Location = new Point(image_width_border, 3);
+            head.Location = new Point(image2_width_border, 3);
             head.Multiline = false;
             head.Size = new Size(200, 29);
             head.ReadOnly = true;
@@ -326,7 +405,7 @@ namespace OpenXR_Switcher
 
             panel.Controls.Add(head);
 
-            // --------------------------------------------------------
+            // ----------------------------------------------------------------------------------------------------------------
             RichTextBox text = new RichTextBox();
             text.BorderStyle = BorderStyle.None;
             text.Font = new Font("Segoe UI", 16F);
@@ -339,7 +418,7 @@ namespace OpenXR_Switcher
 
             panel.Controls.Add(text);
 
-            // --------------------------------------------------------
+            // ----------------------------------------------------------------------------------------------------------------
             head.Width = TextRenderer.MeasureText(text.Text, text.Font).Width;
             text.Width = TextRenderer.MeasureText(text.Text, text.Font).Width;
 
@@ -549,6 +628,22 @@ namespace OpenXR_Switcher
                 SetActiveRuntime(parent);
             else
                 SetActiveLayer(parent, value);
+        }
+        private static void evtEditPictureBox_Clicked(object sender, EventArgs e, string originalname, string filepathname)
+        {
+            mainWindow.panelEdit.Location = new Point(
+                mainWindow.ClientSize.Width / 2 - mainWindow.panelEdit.Size.Width / 2,
+                mainWindow.ClientSize.Height / 2 - mainWindow.panelEdit.Size.Height / 2);
+
+            mainWindow.tableLayoutPanel.Enabled = false;        // Enabled | Visible
+            mainWindow.buttonRefresh.Visible = false;
+
+            saved_name = originalname;
+            mainWindow.maskedTextBox.Text = filepathname;
+
+            mainWindow.panelEdit.BringToFront();
+
+            mainWindow.panelEdit.Visible = true;
         }
     }
 }
