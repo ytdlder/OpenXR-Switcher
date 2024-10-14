@@ -58,6 +58,8 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 ## Version History
 
+* 1.2.1
+	* add version information to the title
 * 1.2
 	* added Rename function, that allows for custom names
 	* these are added to the local users registry (HKCU\Software\Hotshot\OpenXRSwitcher)

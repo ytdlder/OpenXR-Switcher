@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
@@ -12,6 +13,10 @@ namespace OpenXR_Switcher
         public WindowMain()
         {
             InitializeComponent();
+
+            // display version in the title
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            Text = Text + " (v" + version.Major + "." + version.Minor + "." + version.Build + ")";
         }
 
         private void RepositionRefreshButton()
