@@ -58,6 +58,9 @@ Reads the Windows registry which OpenXR runtimes/layers are installed, checks if
 
 ## Version History
 
+* 1.2.2
+	* fixed bug, when no custom name has been set yet
+	* added: open with last window size
 * 1.2.1
 	* add version information to the title
 * 1.2

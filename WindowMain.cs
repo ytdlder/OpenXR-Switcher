@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using OpenXR_Switcher.Properties;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -13,10 +14,43 @@ namespace OpenXR_Switcher
         public WindowMain()
         {
             InitializeComponent();
+        }
 
+        private void WindowMain_Load(object sender, EventArgs e)
+        {
             // display version in the title
             Version version = Assembly.GetExecutingAssembly().GetName().Version;
             Text = Text + " (v" + version.Major + "." + version.Minor + "." + version.Build + ")";
+
+            // set previous window size
+            if (Settings.Default.WindowSize != null && Settings.Default.WindowSize.Width >= 400 && Settings.Default.WindowSize.Height >= 400)
+            {
+                this.Size = Settings.Default.WindowSize;
+            }
+
+            Functions.GetRuntimes();
+
+            Functions.GetActiveRuntime();
+
+            Functions.CheckArguments();
+
+            Functions.AddRuntimes();
+
+            Functions.GetAddLayers();
+        }
+
+        private void WindowMain_Closing(object sender, FormClosingEventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Normal)
+            {
+                Settings.Default.WindowSize = this.Size;
+            }
+            else
+            {
+                Settings.Default.WindowSize = this.RestoreBounds.Size;
+            }
+
+            Settings.Default.Save();
         }
 
         private void RepositionRefreshButton()
@@ -24,7 +58,7 @@ namespace OpenXR_Switcher
             int ScrollbarWidth = 17;
             int MarginsBordersPadding = 19;
 
-            int PosX = WindowMain.ActiveForm.Width - buttonRefresh.Width - MarginsBordersPadding;
+            int PosX = this.Width - buttonRefresh.Width - MarginsBordersPadding;
 
             if (flowLayers.VerticalScroll.Visible)
             {
@@ -35,19 +69,6 @@ namespace OpenXR_Switcher
             {
                 buttonRefresh.Location = new Point(PosX, 6);
             }
-        }
-
-        private void WindowMain_Load(object sender, EventArgs e)
-        {
-            Functions.GetRuntimes();
-
-            Functions.GetActiveRuntime();
-
-            Functions.CheckArguments();
-
-            Functions.AddRuntimes();
-
-            Functions.GetAddLayers();
         }
 
         private void buttonRefresh_Click(object sender, EventArgs e)
@@ -87,14 +108,14 @@ namespace OpenXR_Switcher
 
         private void evtbuttonSave_Click(object sender, EventArgs e)
         {
-            if(!Functions.WriteToReg("HKCU", Functions.reg_usersetnames, Functions.saved_name, maskedTextBox.Text, RegistryValueKind.String))
+            if (!Functions.WriteToReg("HKCU", Functions.reg_usersetnames, Functions.saved_name, maskedTextBox.Text, RegistryValueKind.String))
                 MessageBox.Show("Couldn't write to registry!", "ERROR", MessageBoxButtons.OK);
 
             ResetOverlay();
 
             buttonRefresh.PerformClick();
         }
-        
+
         private void evtbuttonReset_Click(object sender, EventArgs e)
         {
             if (!Functions.WriteToReg("HKCU", Functions.reg_usersetnames, "#DELETE#", Functions.saved_name, RegistryValueKind.String))

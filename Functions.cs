@@ -315,7 +315,7 @@ namespace OpenXR_Switcher
                 filepathname = "NeckSafer";
             else if (string.Equals(filepathname, "bin\\OpenKneeboard-OpenXR.json", StringComparison.OrdinalIgnoreCase))
                 filepathname = "OpenKneeBoard";
-            
+
             else
             {
                 string[] temp = filename.Split('_', '-');
@@ -364,13 +364,17 @@ namespace OpenXR_Switcher
             // Check filepathname with user set name
             string originalname = filepathname;
 
-            for (int i = 0; i < (allusersetnames.Length / 2); i++)    // durch 2, weil zweidimensionales Array und Length alle Felder zählt!
+            // Are there any user-saved names?
+            if (allusersetnames != null)
             {
-                if (filepathname == allusersetnames[i, 0])
+                for (int i = 0; i < (allusersetnames.Length / 2); i++)    // durch 2, weil zweidimensionales Array und Length alle Felder zählt!
                 {
-                    originalname = allusersetnames[i, 0];
-                    filepathname = allusersetnames[i, 1];
-                    break;
+                    if (filepathname == allusersetnames[i, 0])
+                    {
+                        originalname = allusersetnames[i, 0];
+                        filepathname = allusersetnames[i, 1];
+                        break;
+                    }
                 }
             }
 
